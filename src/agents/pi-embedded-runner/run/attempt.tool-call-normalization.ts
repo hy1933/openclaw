@@ -141,7 +141,7 @@ function resolveStructuredAllowedToolName(
       // (e.g., `read5f3789abcd` -> `read`, `agentslist1f3789abcd` -> `agents_list`)
       if (rawName.length > variant.length && rawName.startsWith(variant)) {
         const suffix = rawName.substring(variant.length);
-        if (/^[a-f0-9]{4,}$/.test(suffix)) {
+        if (/^(?=.*\d)[a-f0-9]{8,}$/.test(suffix)) {
           return allowedName;
         }
       }
