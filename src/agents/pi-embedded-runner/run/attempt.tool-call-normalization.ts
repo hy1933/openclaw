@@ -108,6 +108,36 @@ function resolveStructuredAllowedToolName(
     }
   }
 
+  // Some models (e.g., certain local models or specific API versions) occasionally 
+  // emit malformed tool names by stripping underscores, prepending dots, or appending 
+  // random hex suffixes. We perform a reverse lookup against allowed names to recover 
+  // the correct tool without failing the entire turn.
+  for (const allowedName of allowedToolNames) {
+    const noUnderscore = allowedName.replace(/_/g, "");
+    const withDot = `.${allowedName}`;
+    const withDotNoUnderscore = `.${noUnderscore}`;
+
+    const isDirectMatch =
+      rawName === noUnderscore ||
+      rawName === withDot ||
+      rawName === withDotNoUnderscore;
+
+    // Handle cases where a random hex string is appended (e.g., `Toolnodes132b3c233`)
+    const suffixMatch = rawName.match(/^(.+?)[a-f0-9]{4,}$/);
+    const strippedName = suffixMatch ? suffixMatch[1] : null;
+
+    const isStrippedMatch =
+      strippedName !== null &&
+      (strippedName === allowedName ||
+        strippedName === noUnderscore ||
+        strippedName === withDot ||
+        strippedName === withDotNoUnderscore);
+
+    if (isDirectMatch || isStrippedMatch) {
+      return allowedName;
+    }
+  }
+  
   return null;
 }
 
