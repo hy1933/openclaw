@@ -108,7 +108,7 @@ function resolveStructuredAllowedToolName(
     }
   }
 
-   // Some models occasionally emit malformed tool names by stripping underscores,
+  // Some models occasionally emit malformed tool names by stripping underscores,
   // prepending dots, appending random hex suffixes, or dropping leading characters.
   // We perform a reverse lookup against allowed names to recover the correct tool
   // without failing the entire turn.
@@ -125,7 +125,10 @@ function resolveStructuredAllowedToolName(
 
     // Also try dropping the first character (e.g., `session_status` -> `ession_status`)
     if (allowedName.length > 2) {
-      variants.push(allowedName.substring(1), noUnderscore.substring(1));
+      const tail1 = allowedName.substring(1);
+      const tail2 = noUnderscore.substring(1);
+      if (tail1.length >= 3) variants.push(tail1);
+      if (tail2.length >= 3 && tail2 !== tail1) variants.push(tail2);
     }
 
     for (const variant of variants) {
