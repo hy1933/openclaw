@@ -127,8 +127,12 @@ function resolveStructuredAllowedToolName(
     if (allowedName.length > 2) {
       const tail1 = allowedName.substring(1);
       const tail2 = noUnderscore.substring(1);
-      if (tail1.length >= 3) variants.push(tail1);
-      if (tail2.length >= 3 && tail2 !== tail1) variants.push(tail2);
+      if (tail1.length >= 3) {
+        variants.push(tail1);
+      }
+      if (tail2.length >= 3 && tail2 !== tail1) {
+        variants.push(tail2);
+      }
     }
 
     for (const variant of variants) {
