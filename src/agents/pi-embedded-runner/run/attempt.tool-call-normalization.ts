@@ -115,7 +115,7 @@ function resolveStructuredAllowedToolName(
   for (const allowedName of allowedToolNames) {
     const noUnderscore = allowedName.replace(/_/g, "");
 
-    // Build all known variants of this allowed tool name
+    // Base variants
     const variants = [
       allowedName,
       noUnderscore,
@@ -127,12 +127,8 @@ function resolveStructuredAllowedToolName(
     if (allowedName.length > 2) {
       const tail1 = allowedName.substring(1);
       const tail2 = noUnderscore.substring(1);
-      if (tail1.length >= 3) {
-        variants.push(tail1);
-      }
-      if (tail2.length >= 3 && tail2 !== tail1) {
-        variants.push(tail2);
-      }
+      if (tail1.length >= 3) variants.push(tail1);
+      if (tail2.length >= 3 && tail2 !== tail1) variants.push(tail2);
     }
 
     for (const variant of variants) {
@@ -140,8 +136,19 @@ function resolveStructuredAllowedToolName(
       if (rawName === variant) {
         return allowedName;
       }
+    }
 
-      // Prefix match: rawName starts with a known variant, remainder is all hex
+    // Prefix match: exclude substring(1) variants to avoid ambiguity 
+    // (e.g., preventing `search5f3789` from matching `msearch`)
+    const safePrefixVariants = [
+      allowedName,
+      noUnderscore,
+      `.${allowedName}`,
+      `.${noUnderscore}`,
+    ];
+
+    for (const variant of safePrefixVariants) {
+      // rawName starts with a known variant, remainder is a strong hash signal
       // (e.g., `read5f3789abcd` -> `read`, `agentslist1f3789abcd` -> `agents_list`)
       if (rawName.length > variant.length && rawName.startsWith(variant)) {
         const suffix = rawName.substring(variant.length);
