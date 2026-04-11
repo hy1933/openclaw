@@ -112,10 +112,12 @@ function resolveStructuredAllowedToolName(
   // prepending dots, appending random hex suffixes, or dropping leading characters.
   // We perform a reverse lookup against allowed names to recover the correct tool
   // without failing the entire turn.
+
+  const exactMatches: string[] = [];
+
   for (const allowedName of allowedToolNames) {
     const noUnderscore = allowedName.replace(/_/g, "");
 
-    // Base variants
     const variants = [
       allowedName,
       noUnderscore,
@@ -123,7 +125,6 @@ function resolveStructuredAllowedToolName(
       `.${noUnderscore}`,
     ];
 
-    // Also try dropping the first character (e.g., `session_status` -> `ession_status`)
     if (allowedName.length > 2) {
       const tail1 = allowedName.substring(1);
       const tail2 = noUnderscore.substring(1);
@@ -132,14 +133,23 @@ function resolveStructuredAllowedToolName(
     }
 
     for (const variant of variants) {
-      // Exact match
       if (rawName === variant) {
-        return allowedName;
+        exactMatches.push(allowedName);
+        break; // Matching one is enough
       }
     }
+  }
 
-    // Prefix match: exclude substring(1) variants to avoid ambiguity 
-    // (e.g., preventing `search5f3789` from matching `msearch`)
+  // Fail-closed: If there are multiple exact matches (e.g., `search` matching both `msearch` and `dsearch`),
+  // we consider it ambiguous and do NOT resolve, preventing wrong-tool execution.
+  if (exactMatches.length === 1) {
+    return exactMatches[0];
+  }
+
+  // If no unambiguous exact match is found, try prefix matching with hex suffixes
+  for (const allowedName of allowedToolNames) {
+    const noUnderscore = allowedName.replace(/_/g, "");
+
     const safePrefixVariants = [
       allowedName,
       noUnderscore,
@@ -148,8 +158,6 @@ function resolveStructuredAllowedToolName(
     ];
 
     for (const variant of safePrefixVariants) {
-      // rawName starts with a known variant, remainder is a strong hash signal
-      // (e.g., `read5f3789abcd` -> `read`, `agentslist1f3789abcd` -> `agents_list`)
       if (rawName.length > variant.length && rawName.startsWith(variant)) {
         const suffix = rawName.substring(variant.length);
         if (/^(?=.*\d)[a-f0-9]{8,}$/.test(suffix)) {
